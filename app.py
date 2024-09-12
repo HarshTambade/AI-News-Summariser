@@ -7,7 +7,10 @@ from urllib.parse import urlparse
 import validators
 import requests
 
+import nltk
 nltk.download('punkt')
+nltk.download('punkt_tab')
+  # Download the punkt tokenizer
 
 app = Flask(__name__)
 
