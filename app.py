@@ -7,10 +7,10 @@ from urllib.parse import urlparse
 import validators
 import requests
 
-import nltk
+import nltk   # Download the punkt tokenizer
 nltk.download('punkt')
-nltk.download('punkt_tab')
-  # Download the punkt tokenizer
+nltk.download('punkt_tab') #This tokenizer divides a text into a list of sentences by using an unsupervised algorithm to build a model for abbreviation words, collocations, and words
+
 
 app = Flask(__name__)
 
@@ -58,8 +58,8 @@ def index():
 
         top_image = article.top_image  # Get the top image URL
 
-        analysis = TextBlob(article.text)
-        polarity = analysis.sentiment.polarity  # Get the polarity value
+        analysis = TextBlob(article.text) #TextBlob is a Python library for processing textual data. It provides a simple API for diving into common natural language processing (NLP) tasks
+        polarity = analysis.sentiment.polarity  # Polarity refers to the overall sentiment conveyed by a particular text, phrase or word. 
 
         if summary == "":
             flash('Please enter a valid URL.')
