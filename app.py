@@ -1,11 +1,15 @@
 from flask import Flask, request, render_template, flash, redirect, url_for
-from collections import defaultdict
+import nltk
+from nltk.tokenize import sent_tokenize, word_tokenize
+from collections import defaultdict, Counter
 from datetime import datetime
 from urllib.parse import urlparse
 import validators
 import requests
 import string
-import re
+import math
+
+nltk.download('punkt')
 
 app = Flask(__name__)
 
@@ -21,42 +25,20 @@ def get_website_name(url):
         domain = domain[4:]
     return domain
 
-# Custom function to split text into sentences
-def custom_sentence_tokenize(text):
-    # Simple regex for sentence splitting
-    sentences = re.split(r'(?<=[.!?]) +', text)
-    return sentences
-
-# Custom function to split text into words
-def custom_word_tokenize(text):
-    # Remove punctuation and split by whitespace
-    words = re.findall(r'\b\w+\b', text.lower())
-    return words
+# Function to tokenize text into sentences and words
+def tokenize_text(text):
+    sentences = sent_tokenize(text)  # Sentence tokenization
+    words = word_tokenize(text.lower())  # Word tokenization (lowercase for consistency)
+    return sentences, words
 
 # Function to calculate word frequency
 def calculate_word_frequency(words):
-    stop_words = set(["a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "as", "at",
-                      "be", "because", "been", "before", "being", "below", "between", "both", "but", "by", "can", "could",
-                      "couldn't", "did", "didn't", "do", "does", "doesn't", "doing", "don't", "down", "during", "each",
-                      "few", "for", "from", "further", "had", "hadn't", "has", "hasn't", "have", "haven't", "having",
-                      "he", "he'd", "he'll", "he's", "her", "here", "here's", "hers", "herself", "him", "himself",
-                      "his", "how", "i", "i'd", "i'll", "i'm", "i've", "if", "in", "into", "is", "isn't", "it", "it's",
-                      "its", "itself", "just", "ll", "me", "might", "mightn't", "more", "most", "must", "mustn't",
-                      "my", "myself", "need", "needn't", "no", "nor", "not", "of", "off", "on", "once", "only",
-                      "or", "other", "our", "ours", "ourselves", "out", "over", "own", "re", "same", "shan't", "she",
-                      "she'd", "she'll", "she's", "should", "shouldn't", "so", "some", "such", "t", "than", "that",
-                      "that's", "the", "their", "theirs", "them", "themselves", "then", "there", "there's", "these",
-                      "they", "they'd", "they'll", "they're", "they've", "this", "those", "through", "to", "too", "under",
-                      "until", "up", "ve", "very", "was", "wasn't", "we", "we'd", "we'll", "we're", "we've", "were",
-                      "weren't", "what", "what's", "when", "where", "where's", "which", "while", "who", "who's", "whom",
-                      "why", "will", "with", "won't", "would", "wouldn't", "you", "you'd", "you'll", "you're", "you've",
-                      "your", "yours", "yourself", "yourselves"])
-    
+    stop_words = set(nltk.corpus.stopwords.words('english'))  # Load stopwords
     word_freq = defaultdict(int)
     
     for word in words:
-        # Filter out stopwords
-        if word not in stop_words:
+        # Filter out punctuation and stopwords
+        if word not in string.punctuation and word not in stop_words:
             word_freq[word] += 1
 
     return word_freq
@@ -66,7 +48,7 @@ def rank_sentences(sentences, word_freq):
     sentence_rank = defaultdict(int)
     
     for i, sentence in enumerate(sentences):
-        words_in_sentence = custom_word_tokenize(sentence)
+        words_in_sentence = word_tokenize(sentence.lower())
         for word in words_in_sentence:
             if word in word_freq:
                 sentence_rank[i] += word_freq[word]
@@ -75,8 +57,7 @@ def rank_sentences(sentences, word_freq):
 
 # Custom summarization function
 def summarize_text(text, max_sentences=5):
-    sentences = custom_sentence_tokenize(text)
-    words = custom_word_tokenize(text)
+    sentences, words = tokenize_text(text)
     word_freq = calculate_word_frequency(words)
     ranked_sentences = rank_sentences(sentences, word_freq)
     
@@ -88,7 +69,7 @@ def summarize_text(text, max_sentences=5):
 
 # Custom sentiment analysis function
 def analyze_sentiment(text):
-    words = custom_word_tokenize(text)
+    words = word_tokenize(text.lower())
     positive_count = sum(1 for word in words if word in positive_words)
     negative_count = sum(1 for word in words if word in negative_words)
 
